@@ -38,7 +38,6 @@ def build_session(proxy_host: str, proxy_port: int, timeout: int) -> requests.Se
     proxy_url = f"socks5h://{proxy_host}:{proxy_port}"
     session.proxies = {"http": proxy_url, "https": proxy_url}
     session.headers.update({"User-Agent": "TorDownloader/1.0"})
-    session.timeout = timeout
     return session
 
 
@@ -104,6 +103,7 @@ def download_recursive(
     session: requests.Session,
     depth: int,
     verbose: bool,
+    timeout: int = 60,
 ) -> None:
     """BFS crawl from *start_url*, saving every reachable resource."""
     visited: set[str] = set()
@@ -124,7 +124,7 @@ def download_recursive(
         logger.info("Fetching [depth=%d]: %s", current_depth, url)
 
         try:
-            response = session.get(url, stream=True, timeout=session.timeout)
+            response = session.get(url, stream=True, timeout=timeout)
             response.raise_for_status()
         except requests.exceptions.RequestException as exc:
             logger.warning("Failed to fetch %s: %s", url, exc)
@@ -143,7 +143,8 @@ def download_recursive(
             if depth < 0 or current_depth < depth:
                 try:
                     html = content.decode("utf-8", errors="replace")
-                except Exception:
+                except (UnicodeDecodeError, LookupError) as exc:
+                    logger.warning("Could not decode %s: %s", url, exc)
                     continue
                 for link in extract_links(html, url):
                     if link not in visited:
@@ -209,6 +210,7 @@ def main(argv: list[str] | None = None) -> int:
             session=session,
             depth=args.depth,
             verbose=args.verbose,
+            timeout=args.timeout,
         )
     except KeyboardInterrupt:
         logger.info("Interrupted by user.")

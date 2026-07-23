@@ -11,6 +11,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import tordownloader
 
+# Cross-platform temp directory for path-based tests that don't write files
+_TMP = Path(tempfile.gettempdir()) / "tordownloader_tests"
+
 
 class TestIsSameOrigin(unittest.TestCase):
     def test_same_origin(self):
@@ -40,7 +43,7 @@ class TestIsSameOrigin(unittest.TestCase):
 
 class TestUrlToLocalPath(unittest.TestCase):
     def setUp(self):
-        self.out = Path("/tmp/testout")
+        self.out = _TMP
 
     def test_file_url(self):
         path = tordownloader.url_to_local_path(
@@ -144,7 +147,6 @@ class TestDownloadRecursive(unittest.TestCase):
 
         session = MagicMock()
         session.get.side_effect = fake_get
-        session.timeout = 30
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir)
@@ -154,6 +156,7 @@ class TestDownloadRecursive(unittest.TestCase):
                 session=session,
                 depth=-1,
                 verbose=False,
+                timeout=30,
             )
             root_file = out / "t.onion" / "index.html"
             page2_file = out / "t.onion" / "page2" / "index.html"
@@ -167,7 +170,6 @@ class TestDownloadRecursive(unittest.TestCase):
 
         session = MagicMock()
         session.get.return_value = self._make_response(html)
-        session.timeout = 30
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir)
@@ -177,6 +179,7 @@ class TestDownloadRecursive(unittest.TestCase):
                 session=session,
                 depth=-1,
                 verbose=False,
+                timeout=30,
             )
             # Only the start URL should have been fetched
             self.assertEqual(session.get.call_count, 1)
@@ -187,7 +190,6 @@ class TestDownloadRecursive(unittest.TestCase):
 
         session = MagicMock()
         session.get.return_value = self._make_response(html)
-        session.timeout = 30
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tordownloader.download_recursive(
@@ -196,6 +198,7 @@ class TestDownloadRecursive(unittest.TestCase):
                 session=session,
                 depth=0,
                 verbose=False,
+                timeout=30,
             )
             self.assertEqual(session.get.call_count, 1)
 
@@ -204,7 +207,6 @@ class TestDownloadRecursive(unittest.TestCase):
 
         session = MagicMock()
         session.get.return_value = self._make_response(pdf_bytes, "application/pdf")
-        session.timeout = 30
 
         with tempfile.TemporaryDirectory() as tmpdir:
             out = Path(tmpdir)
@@ -214,6 +216,7 @@ class TestDownloadRecursive(unittest.TestCase):
                 session=session,
                 depth=-1,
                 verbose=False,
+                timeout=30,
             )
             saved = out / "t.onion" / "report.pdf"
             self.assertTrue(saved.exists())
@@ -224,7 +227,6 @@ class TestDownloadRecursive(unittest.TestCase):
 
         session = MagicMock()
         session.get.side_effect = req_lib.exceptions.ConnectionError("refused")
-        session.timeout = 30
 
         with tempfile.TemporaryDirectory() as tmpdir:
             # Should not raise; logs a warning instead
@@ -234,6 +236,7 @@ class TestDownloadRecursive(unittest.TestCase):
                 session=session,
                 depth=-1,
                 verbose=False,
+                timeout=30,
             )
 
     def test_visited_urls_not_refetched(self):
@@ -250,7 +253,6 @@ class TestDownloadRecursive(unittest.TestCase):
 
         session = MagicMock()
         session.get.side_effect = fake_get
-        session.timeout = 30
 
         with tempfile.TemporaryDirectory() as tmpdir:
             tordownloader.download_recursive(
@@ -259,6 +261,7 @@ class TestDownloadRecursive(unittest.TestCase):
                 session=session,
                 depth=-1,
                 verbose=False,
+                timeout=30,
             )
             # /dup appears twice in the HTML but should only be fetched once
             calls = [c.args[0] for c in session.get.call_args_list]
@@ -269,7 +272,6 @@ class TestBuildSession(unittest.TestCase):
     def test_proxy_configured(self):
         session = tordownloader.build_session("127.0.0.1", 9050, 30)
         self.assertIn("socks5h://", session.proxies.get("http", ""))
-        self.assertEqual(session.timeout, 30)
 
 
 class TestMain(unittest.TestCase):
