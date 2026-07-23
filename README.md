@@ -12,8 +12,9 @@ Script Python completamente automatizado para descargar recursivamente archivos 
 4. [Configuración](#configuración)
 5. [Cómo Usar](#cómo-usar)
 6. [Características](#características)
-7. [Solución de Problemas](#solución-de-problemas)
-8. [Seguridad](#seguridad)
+7. [Compatibilidad por Plataforma](#compatibilidad-por-plataforma)
+8. [Solución de Problemas](#solución-de-problemas)
+9. [Seguridad](#seguridad)
 
 ---
 
@@ -33,6 +34,15 @@ Un script Python que descarga automáticamente todos los archivos de un sitio `.
 
 ## 📋 Requisitos del Sistema
 
+### ⚠️ **Importante: Este proyecto NO incluye Tor**
+
+El script es **solo un cliente Python** que se conecta a Tor. Debes tener **Tor instalado y ejecutándose** en tu computadora para que funcione.
+
+**En todas las plataformas (Linux, macOS, Windows):**
+- ✅ Tor debe estar instalado y corriendo en puerto `9050`
+- ✅ El script se conecta a través de ese puerto
+- ✅ No hay Tor incluido en este proyecto
+
 ### 1. Python 3.8 o superior
 - **Linux/macOS**: Generalmente ya instalado
 - **Windows**: Descargar desde https://www.python.org
@@ -46,6 +56,8 @@ Debe mostrar algo como `Python 3.8.10` o superior.
 
 ### 2. Tor instalado y ejecutándose
 Te mostraremos cómo instalarlo en la siguiente sección.
+
+**El script verifica automáticamente que Tor está corriendo antes de empezar a descargar.**
 
 ### 3. Herramientas de desarrollo (solo en Linux)
 ```bash
@@ -111,10 +123,33 @@ brew services list | grep tor
 
 #### En Windows
 
+**Opción A: Usar Tor Browser (Más fácil - Recomendado)**
+
 1. Descargar desde https://www.torproject.org/download/
-2. Ejecutar el instalador
-3. Seleccionar "Install" en el asistente
-4. Tor se iniciará automáticamente
+2. Ejecutar el instalador y seguir los pasos
+3. Abrir Tor Browser
+4. Ir a Settings → Connection → verificar que SOCKS5 proxy está en `127.0.0.1:9050`
+5. Dejar Tor Browser abierto mientras descargas
+
+**Opción B: Instalar Tor Standalone**
+
+1. Descargar desde https://www.torproject.org/download/#windows
+2. Extraer el archivo ZIP
+3. Abrir terminal en esa carpeta y ejecutar `tor.exe`
+4. Debería aparecer un mensaje: `Bootstrapped 100% (done): Done`
+5. Dejar ejecutándose en la terminal mientras descargas
+
+**Verificar que Tor está escuchando:**
+
+En PowerShell o cmd:
+```powershell
+netstat -an | findstr 9050
+```
+
+Deberías ver algo como:
+```
+TCP    127.0.0.1:9050    0.0.0.0:0    LISTENING
+```
 
 ---
 
@@ -600,7 +635,64 @@ http://ejemplo.onion       # Falta / al final
 
 ---
 
-## 📝 Limitaciones Conocidas
+## �️ Compatibilidad por Plataforma
+
+### Windows
+```
+✅ Requisitos:
+   - Python 3.8+ (descargar desde python.org)
+   - Tor Browser O Tor Standalone (desde torproject.org)
+   - El script se conecta al puerto 9050
+   
+⚙️ Pasos:
+   1. Instalar Python
+   2. Descargar e instalar Tor Browser o Tor Standalone
+   3. ABRIR Tor Browser (o ejecutar tor.exe si es standalone)
+   4. Seguir pasos de instalación (PASO 2-5)
+   5. Ejecutar: python tor_downloader.py
+   
+✅ Verificación:
+   En PowerShell: netstat -an | findstr 9050
+   Debe mostrar: TCP 127.0.0.1:9050 ... LISTENING
+```
+
+### Linux (Debian/Ubuntu/Fedora/Arch)
+```
+✅ Requisitos:
+   - Python 3.8+
+   - Tor (instalable vía apt/dnf/pacman)
+   
+⚙️ Pasos:
+   1. Instalar Tor: sudo apt-get install tor
+   2. Iniciar: sudo systemctl start tor
+   3. Seguir pasos de instalación (PASO 2-5)
+   4. Ejecutar: python tor_downloader.py
+   
+✅ Verificación:
+   netstat -tuln | grep 9050
+   Debe mostrar: tcp ... 127.0.0.1:9050 ... LISTEN
+```
+
+### macOS
+```
+✅ Requisitos:
+   - Python 3.8+
+   - Tor (instalable vía Homebrew o dmg)
+   
+⚙️ Pasos:
+   1. Instalar Tor: brew install tor
+   2. Iniciar: brew services start tor
+   3. Seguir pasos de instalación (PASO 2-5)
+   4. Ejecutar: python tor_downloader.py
+   
+✅ Verificación:
+   netstat -an | grep 9050
+   Debe mostrar: tcp4 ... 127.0.0.1.9050 ... LISTEN
+```
+
+---
+
+## �📝 Limitaciones Conocidas
 
 | Limitación | Detalles |
 |---|---|
